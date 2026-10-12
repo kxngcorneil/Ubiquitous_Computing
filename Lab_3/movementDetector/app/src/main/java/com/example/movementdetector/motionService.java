@@ -12,6 +12,8 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.util.Log;
 import android.view.View;
+import android.app.NotificationChannel;
+import android.os.Build;
 
 
 public class motionService extends Service implements SensorEventListener {
@@ -24,6 +26,7 @@ public class motionService extends Service implements SensorEventListener {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startID){
+
             SensorManager sensorManager;
          Sensor accelerometer;
 
@@ -36,6 +39,16 @@ public class motionService extends Service implements SensorEventListener {
         return START_STICKY;
 
     }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    "motion_channel",
+                    "Motion Detection"
+            );
+        }
+    }
+
 
     private void showNotification(){
         Notification.Builder builder = new Notification.Builder(this)
@@ -55,11 +68,12 @@ public class motionService extends Service implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent event) {
+
         float x = event.values[0];
         float y = event.values[1];
         float z = event.values[2];
 
-        if(Math.abs(x) > 3 ||  Math.abs(y) > 3 ||  Math.abs(z) > 3 ){
+        if(Math.abs(x) > 10 ||  Math.abs(y) > 10 ||  Math.abs(z) > 10 ){
             showNotification();
             Log.d("Movement", "Phone movement");
         }
