@@ -1,83 +1,102 @@
+
 package com.example.movementdetector;
 
 import android.app.Service;
-import android.content.Context;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.os.IBinder;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.util.Log;
-import android.view.View;
-import android.app.NotificationChannel;
 import android.os.Build;
+import android.os.IBinder;
+import android.util.Log;
 
+import androidx.core.app.NotificationCompat;
 
 public class motionService extends Service implements SensorEventListener {
 
+    private SensorManager sensorManager;
+    private Sensor accelerometer;
 
-
-
-    public motionService() {
-    }
+    private static final String CHANNEL_ID = "motion_channel";
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startID){
+    public void onCreate() {
+        super.onCreate();
 
-            SensorManager sensorManager;
-         Sensor accelerometer;
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 
-         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        accelerometer = sensorManager.getDefaultSensor(
+                Sensor.TYPE_ACCELEROMETER);
 
-        if(accelerometer !=null){
-            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        createNotificationChannel();
+    }
+
+
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+
+        if (accelerometer != null) {
+            sensorManager.registerListener(
+                    this,
+                    accelerometer,
+                    SensorManager.SENSOR_DELAY_NORMAL);
         }
+
+
         return START_STICKY;
-
-    }
-
-    private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    "motion_channel",
-                    "Motion Detection"
-            );
-        }
-    }
-
-
-    private void showNotification(){
-        Notification.Builder builder = new Notification.Builder(this)
-                .setContentTitle("Don't touch phone")
-                .setContentText("Movement Detected")
-                .setSmallIcon(android.R.drawable.ic_dialog_alert);
-
-        NotificationManager manager = (NotificationManager)  getSystemService(NOTIFICATION_SERVICE);
-        Log.d("Motion Server", "detected");
-        manager.notify(1, builder.build());
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
     }
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-
         float x = event.values[0];
         float y = event.values[1];
         float z = event.values[2];
 
-        if(Math.abs(x) > 10 ||  Math.abs(y) > 10 ||  Math.abs(z) > 10 ){
+        if (Math.abs(x) > 10 || Math.abs(y) > 10 || Math.abs(z) > 10) {
             showNotification();
-            Log.d("Movement", "Phone movement");
         }
     }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "Motion Detection",
+                    NotificationManager.IMPORTANCE_DEFAULT);
+            channel.setDescription(
+                    "movemnt is detected");
+
+            NotificationManager notificationManager =
+                    getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+
+
+    private void showNotification() {
+        NotificationManager notificationManager =
+                (NotificationManager)
+                        getSystemService(NOTIFICATION_SERVICE);
+        NotificationCompat.Builder notification =
+                new NotificationCompat.Builder(this, CHANNEL_ID)
+                        .setContentTitle("Dont touch my phone")
+                        .setContentText("movement detected")
+                        .setSmallIcon(android.R.drawable.ic_dialog_alert)
+                        .setAutoCancel(true);
+        notificationManager.notify(0, notification.build());
+
+
+    }
+
 
 
 
@@ -85,10 +104,4 @@ public class motionService extends Service implements SensorEventListener {
     public IBinder onBind(Intent intent) {
         return null;
     }
-
-
-
-
-
-
 }
